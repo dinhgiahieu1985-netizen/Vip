@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quản Lý Nhà Nghỉ Hy Hy - Pro v10</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+  :root {
+    --primary: #1e40af;
+    --primary-light: #dbeafe;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #cbd5e1;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --gray-bg: #e2e8f0;
+  }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 80px; }
+  
+  tiêu đề {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    màu: trắng; khoảng cách lề: 14px 16px; vị trí: dính; trên cùng: 0; chỉ số z: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: center; }
+  .header-title { font-size: 18px; font-weight: 700; margin: 0; }
+  .header-sub { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+  .container { max-width: 1000px; margin: 0 auto; padding: 14px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .status-legend {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: 12px;
+  }
+  .badge { padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  .st-clean { background: var(--green-bg); color: var(--green); border: 1px solid #86efac; }
+  .st-dirty { background: var(--amber-bg); color: var(--amber); border: 1px solid #fcd34d; }
+  .st-occupied { background: var(--primary-light); color: var(--primary); border: 1px solid #93c5fd; }
+  .st-overtime { background: var(--red-bg); color: var(--red); border: 1px solid #fca5a5; animation: pulse 2s infinite; }
+  .st-repair { background: var(--gray-bg); color: #475569; border: 1px solid #94a3b8; }
+
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.75; } 100% { opacity: 1; } }
+
+  .room-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+  }
+  .room-card {
+    background: var(--card); border-radius: 12px; padding: 14px;
+    border: 2px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    cursor: pointer; transition: transform 0.1s; position: relative;
+  }
+  .room-card:active { transform: scale(0.99); }
+  .room-card.clean { border-color: #22c55e; }
+  .room-card.dirty { border-color: #f59e0b; background: #fffbeb; }
+  .room-card.occupied { border-color: #3b82f6; background: #eff6ff; }
+  .room-card.overtime { border-color: #ef4444; background: #fef2f2; }
+  .room-card.repair { border-color: #64748b; background: #f8fafc; }
+
+  .room-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .room-name { font-size: 18px; font-weight: 800; }
+  .room-type { font-size: 12px; color: var(--muted); }
+  .room-info { font-size: 13px; line-height: 1.5; }
+  .room-money {
+    margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);
+    display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;
+  }
+
+  .card {
+    background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;
+  }
+  .card-title { font-size: 16px; font-weight: 700; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  .form-group { margin-bottom: 10px; }
+  nhãn { hiển thị: khối; cỡ chữ: 12px; độ đậm chữ: 600; màu: #334155; lề dưới: 4px; }
+  ô nhập liệu, ô chọn, vùng văn bản {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+
+  .btn {
+    padding: 10px 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-amber { background: var(--amber); color: white; }
+  .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+  .btn-block { width: 100%; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  @media (min-width: 650px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+  .kpi-box { background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; }
+  .kpi-label { font-size: 12px; color: var(--muted); }
+  .kpi-val { font-size: 18px; font-weight: 800; margin-top: 4px; }
+
+  .table-wrap { overflow-x: auto; }
+  bảng { chiều rộng: 100%; viền thu gọn: thu gọn; cỡ chữ: 13px; }
+  th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #f8fafc; font-weight: 700; color: #334155; }
+
+  .bottom-nav {
+    vị trí: cố định; dưới cùng: 0; trái: 0; phải: 0; nền: trắng;
+    border-top: 1px solid #cbd5e1; display: flex; justify-content: space-around;
+    padding: 6px 0; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  }
+  .nav-item {
+    viền: không; nền: không; màu: var(--muted); cỡ chữ: 9px; độ đậm chữ: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 4px;
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon { font-size: 15px; }
+
+  .modal-backdrop {
+    vị trí: cố định; lề: 0; nền: rgba(15, 23, 42, 0.6);
+    display: none; align-items: flex-end; justify-content: center; z-index: 200;
+  }
+  @media (min-width: 650px) { .modal-backdrop { align-items: center; padding: 16px; } }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: white; width: 100%; max-width: 650px; max-height: 92vh; overflow-y: auto;
+    border-radius: 16px 16px 0 0; padding: 18px;
+  }
+  @media (min-width: 650px) { .modal { border-radius: 16px; } }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin: 0; }
+  .close-btn { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; }
+  .scanner-box { background: #f0fdf4; border: 2px dashed #86efac; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 10px; }
+  .scan-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .scan-preview { max-width: 140px; max-height: 100px; border-radius: 6px; margin: 8px auto 0; display: none; border: 1px solid #86efac; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1 class="header-title" id="app-title">NHÀ NGHỈ HY HY</h1>
+      <div class="header-sub" id="clock-display">Đang tải thời gian...</div>
+    </div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;" onclick="openModal('modal-backup')">💾 Sao lưu</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- TAB 1: SƠ ĐỒ PHÒNG -->
+  <div id="tab-rooms" class="tab-content active">
+    <div class="status-legend">
+      <span class="badge st-clean">🟢 Trống sạch (<span id="cnt-clean">0</span>)</span>
+      <span class="badge st-occupied">🔵 Có khách hàng (<span id="cnt-occ">0</span>)</span>
+      <span class="badge st-overtime">🔴 Quá giờ (<span id="cnt-over">0</span>)</span>
+      <span class="badge st-dirty">🟡 Chưa lên (<span id="cnt-dirty">0</span>)</span>
+      <span class="badge st-repair">⚪ Sửa chữa (<span id="cnt-repair">0</span>)</span>
+    </div>
+    <div class="room-grid" id="room-grid"></div>
+  </div>
+
+  <!-- TAB 2: SỔ NỢ -->
+  <div id="tab-debt" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>📒 Sổ Quản Lý Công Nợ Khách Hàng</span>
+        <button class="btn btn-sm btn-red" onclick="openModal('modal-add-debt')">+ Ghi nợ thủ công</button>
+      </div>
+      <div class="kpi-grid" style="margin-bottom:12px;">
+        <div class="kpi-box">
+          <div class="kpi-label">Tổng tiền nợ</div>
+          <div class="kpi-val" style="color:var(--red);" id="total-debt-val">0 đ</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">Số khách còn nợ</div>
+          <div class="kpi-val" style="color:var(--amber);" id="total-debt-cnt">0 khách</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th> Ngày nợ</th>
+              <th>Hỏi hàng & SĐT</th>
+              <th></th>
+              <th> tiền nợ</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="debt-page-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Lưu TRÚ -->
+  <div id="tab-police" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>🛂 Khai báo lưu trú (Cổng Công An)</span>
+        <span class="badge st-overtime" id="undeclared-count">0 chưa được khai báo</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="copyPoliceInfo()">📋 Sao chép danh sách chưa khai báo</button>
+        <button class="btn btn-green btn-sm" onclick="exportPoliceCSV()">📥 Xuất file CSV</button>
+      </div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Họ tên & CCCD</th>
+              <th>Hạ sinh / GT</th>
+              <th> vào</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="police-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: KHO -->
+  <div id="tab-inventory" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>📦 Quản lý Nhập hàng & Thùng kho</span>
+        <button class="btn btn-sm btn-green" onclick="openModal('modal-inventory')">+ Nhập hàng mới</button>
+      </div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th> Tên hàng</th>
+              <th>Tồn</th>
+              <th>Vốn</th>
+              <th>Bán</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: THU CHI -->
+  <div id="tab-finance" class="tab-content">
+    <div class="card" style="padding:12px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:space-between;">
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" id="flt-today" onclick="setFinanceFilter('today')"> Hôm nay</button>
+          <button class="btn btn-sm btn-outline" id="flt-week" onclick="setFinanceFilter('week')">7 ngày</button>
+          <button class="btn btn-sm btn-outline" id="flt-month" onclick="setFinanceFilter('month')">Tháng này</button>
+          <button class="btn btn-sm btn-outline" id="flt-all" onclick="setFinanceFilter('all')"> Tất cả</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-green" onclick="openModal('modal-income')">+ Thu khác</button>
+          <button class="btn btn-sm btn-red" onclick="openModal('modal-expense')">- đến chi</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div class="kpi-label">Tổng thu</div>
+        <div class="kpi-val" style="color:var(--green);" id="kpi-in">0 đ</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">Tổng chi & Nhập hàng</div>
+        <div class="kpi-val" style="color:var(--red);" id="kpi-out">0 đ</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">Lợi nhuận nhuận</div>
+        <div class="kpi-val" style="color:var(--primary);" id="kpi-net">0 đ</div>
+      </div>
+      <div class="kpi-box">
+        <div class="kpi-label">Khách Còn Nợ</div>
+        <div class="kpi-val" style="color:var(--amber);" id="kpi-debt">0 đ</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📒 Sổ Thu - Chi tiết</span></div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th> gian</th>
+              <th>Nội dung</th>
+              <th> Hình thức</th>
+              <th> tiền</th>
+            </tr>
+          </thead>
+          <tbody id="finance-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: KHÁCH HÀNG & ĐẶT PHÒNG -->
+  <div id="tab-customers" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>📅 Đặt phòng trước</span>
+        <button class="btn btn-sm btn-primary" onclick="openModal('modal-booking')">+ Đặt phòng</button>
+      </div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th> Cấy & SĐT</th>
+              <th></th>
+              <th></th>
+              <th>Cọc</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="booking-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">
+        <span>👥 Hồ sơ khách hàng</span>
+        <input type="text" id="cust-search" placeholder="Tìm tên, SĐT..." style="max-width:200px;padding:5px 8px;font-size:13px;" oninput="renderCustomers()">
+      </div>
+      <div class="table-wrap">
+        <bảng>
+          <thead>
+            <tr>
+              <th> Xin hàng</th>
+              <th>CCCD / SĐT</th>
+              <th>Lượt & Tổng chi</th>
+              <th> Phân loại</th>
+            </tr>
+          </thead>
+          <tbody id="customer-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 7: CÀI ĐẶT & THÊM/XÓA PHÒNG -->
+  <div id="tab-ops" class="tab-content">
+    <div class="card">
+      <div class="card-title">🧹 Danh sách tăng phòng</div>
+      <div id="housekeeping-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🚪 Quản lý Danh sách Phòng (Thêm / Xóa phòng)</div>
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px;border:1px solid #e2e8f0;">
+        <div style="font-weight:700;margin-bottom:6px;font-size:13px;color:var(--primary);">➕ Thêm phòng mới</div>
+        <div class="grid-3">
+          <input type="text" id="new-room-name" placeholder="Tên phòng (VD: Phòng 7)">
+          <select id="new-room-type">
+            <option value="Đơn Lạnh">Đơn Lạnh</option>
+            <option value="Đôi Lạnh">Đôi Lạnh</option>
+            <option value="Phòng VIP">Phòng VIP</option>
+          </select>
+          <button class="btn btn-green btn-sm" onclick="addNewRoom()">+ Thêm phòng</button>
+        </div>
+      </div>
+      <div style="font-weight:700;margin-bottom:8px;font-size:13px;">Danh sách phòng hiện tại:</div>
+      <div id="room-management-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💰 Cài đặt bảng giá chung</div>
+      <div class="grid-2">
+        <div class="form-group"><label>Tên nhà nghỉ</label><input type="text" id="cfg-hotel-name"></div>
+        <div class="form-group"><label>Nhân viên</label><input type="text" id="cfg-staff"></div>
+        <div class="form-group"><label>Giá đầu tiên</label><input type="number" id="cfg-hour1"></div>
+        <div class="form-group"><label>Giá giờ tiếp</label><input type="number" id="cfg-hour-next"></div>
+        <div class="form-group"><label>Thuê qua đêm</label><input type="number" id="cfg-overnight"></div>
+        <div class="form-group"><label>Giá theo ngày</label><input type="number" id="cfg-daily"></div>
+      </div>
+      <button class="btn btn-btn-block" style="margin-top:10px;" onclick="saveSettings()">💾 Lưu giá cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<!-- THANH ĐIỀU HƯỚNG DƯỚI CÙNG -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('rooms', this)"><span class="nav-icon">🏨</span><span>Sơ đồ</span></button>
+  <button class="nav-item" onclick="switchTab('debt', this)"><span class="nav-icon">📒</span><span>Sổ nợ</span></button>
+  <button class="nav-item" onclick="switchTab('police', this)"><span class="nav-icon">🛂</span><span>Lưu trú</span></button>
+  <button class="nav-item" onclick="switchTab('inventory', this)"><span class="nav-icon">📦</span><span>Kho</span></button>
+  <button class="nav-item" onclick="switchTab('finance', this)"><span class="nav-icon">💰</span><span>Thu-Chi</span></button>
+  <button class="nav-item" onclick="switchTab('customers', this)"><span class="nav-icon">👥</span><span> Khách</span></button>
+  <button class="nav-item" onclick="switchTab('ops', this)"><span class="nav-icon">⚙️</span><span> Cài đặt</span></button>
+</nav>
+
+<!-- PHƯƠNG THỨC 1: NHẬN KHÁCH (CHECK-IN) -->
+<div class="modal-backdrop" id="modal-checkin">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="ci-title">Nhận khách</h3>
+      <button class="close-btn" onclick="closeModal('modal-checkin')">✕</button>
+    </div>
+    <input type="hidden" id="ci-room-id">
+    
+    <!-- QUÉT QR CCCD: CHỌN TỪ THƯ VIỆN HOẶC CHỤP ẢNH -->
+    <div class="scanner-box">
+      <div style="font-weight:700;color:var(--green);margin-bottom:4px;">🪪 Quét mã QR trên CCCD (Tự điền thông tin)</div>
+      <div style="font-size:11px;color:var(--muted);">Chọn ảnh chụp CCCD có sẵn trong thư viện hoặc chụp trực tiếp góc phải CCCD</div>
+      
+      <input type="file" id="qr-file-gallery" accept="image/*" style="display:none;" onchange="scanCCCDQRFile(this, 'checkin')">
+      <input type="file" id="qr-file-camera" accept="image/*" capture="environment" style="display:none;" onchange="scanCCCDQRFile(this, 'checkin')">
+      
+      <div class="scan-btn-group">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('qr-file-gallery').click()">🖼️ Chọn ảnh từ thư viện</button>
+        <button type="button" class="btn btn-green btn-sm" onclick="document.getElementById('qr-file-camera').click()">📷 Nhúng ảnh QR</button>
+      </div>
+      
+      <img id="scan-preview-img" class="scan-preview" alt=" CCCD">
+      <div id="scan-status" style="font-size:12px;font-weight:700;margin-top:6px;color:var(--primary);"></div>
+    </div>
+
+    <div class="form-group" style="background:#eff6ff;padding:10px;border-radius:8px;">
+      <label style="color:var(--primary);">🔍 Tìm nhanh khách cũ (Gõ SĐT hoặc CCCD)</label>
+      <input type="text" id="ci-lookup" placeholder="N, SĐT hoặc CCCD..." oninput="autoFillCustomer(this.value)">
+      <div id="ci-lookup-msg" style="font-size:12px;margin-top:4px;font-weight:600;"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group"><label>Họ tên khách *</label><input type="text" id="ci-name" placeholder="NGUYỄN VĂN A"></div>
+      <div class="form-group"><label> CCCD *</label><input type="text" id="ci-cccd" placeholder="091090001234"></div>
+      <div class="form-group"><label>Ngày sinh</label><input type="date" id="ci-dob"></div>
+      <div class="form-group"><label>Giới tính</label><select id="ci-gender"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
+      <div class="form-group"><label>Số điện thoại</label><input type="tel" id="ci-phone" placeholder="0973..."></div>
+      <div class="form-group"><label>Biển số xe</label><input type="text" id="ci-plate" placeholder="68-X1..."></div>
+    </div>
+    <div class="form-group"><label> Địa chỉ</label><input type="text" id="ci-address" placeholder="Rạch Giá, Kiên Giang"></div>
+
+    <div class="form-group" style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fde68a;">
+      <label style="color:var(--amber);font-weight:700;">📝 Ghi chú khi nhận phòng (Tự động lưu sổ nợ)</label>
+      <textarea id="ci-note" row="2" placeholder="Yêu cầu đặc biệt, dừng dò..."></textarea>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group"><label>Thiết kế công thức</label>
+        <select id="ci-rent-type" onchange="updateExpectedCheckout()">
+          <option value="hour">Theo giờ (60k giờ đầu)</option>
+          <option value="overnight">Qua đêm (150k)</option>
+          <option value="daily">Theo ngày 24h</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tiền cọc (VNĐ)</label><input type="number" id="ci-deposit" value="0" step="10000"></div>
+      <div class="form-group"><label> nhận</label><input type="datetime-local" id="ci-checkin-time" onchange="updateExpectedCheckout()"></div>
+      <div class="form-group"><label> trả lời dự kiến</label><input type="datetime-local" id="ci-checkout-expected"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn btn-primary btn-block" onclick="submitCheckIn()"> ✅ Xác nhận đã nhận phòng</button>
+      <button class="btn btn-outline" onclick="setRoomRepair()">🔧 phòng</button>
+    </div>
+  </div>
+</div>
+
+<!-- PHƯƠNG THỨC 2: THÊM KHÁCH SẠN VÀO PHÒNG (THÊM KHÁCH VÀO LƯU TRỮ HIỆN TẠI) -->
+<div class="modal-backdrop" id="modal-add-guest">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="ag-title">Thêm khách vào phòng</h3>
+      <button class="close-btn" onclick="closeModal('modal-add-guest')">✕</button>
+    </div>
+    <input type="hidden" id="ag-room-id">
+    
+    <div class="scanner-box">
+      <div style="font-weight:700;color:var(--green);margin-bottom:4px;">🪪 Quét mã QR CCCD khách hàng đi cùng</div>
+      <div style="font-size:11px;color:var(--muted);">Chọn ảnh chụp CCCD có sẵn trong thư viện hoặc ảnh chụp trực tiếp</div>
+      
+      <input type="file" id="ag-qr-file-gallery" accept="image/*" style="display:none;" onchange="scanCCCDQRFile(this, 'addguest')">
+      <input type="file" id="ag-qr-file-camera" accept="image/*" capture="environment" style="display:none;" onchange="scanCCCDQRFile(this, 'addguest')">
+      
+      <div class="scan-btn-group">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('ag-qr-file-gallery').click()">🖼️ Chọn ảnh từ thư viện</button>
+        <button type="button" class="btn btn-green btn-sm" onclick="document.getElementById('ag-qr-file-camera').click()">📷 Nhúng ảnh QR</button>
+      </div>
+      
+      <img id="ag-scan-preview-img" class="scan-preview" alt=" CCCD">
+      <div id="ag-scan-status" style="font-size:12px;font-weight:700;margin-top:6px;color:var(--primary);"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group"><label>Họ tên khách *</label><input type="text" id="ag-name" placeholder="NGUYỄN VĂN B"></div>
+      <div class="form-group"><label> CCCD *</label><input type="text" id="ag-cccd" placeholder="091090005678"></div>
+      <div class="form-group"><label>Ngày sinh</label><input type="date" id="ag-dob"></div>
+      <div class="form-group"><label>Giới tính</label><select id="ag-gender"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
+      <div class="form-group"><label>Số điện thoại</label><input type="tel" id="ag-phone" placeholder="0973..."></div>
+      <div class="form-group"><label>Biển số xe</label><input type="text" id="ag-plate" placeholder="68-X1..."></div>
+    </div>
+    <div class="form-group"><label> Địa chỉ</label><input type="text" id="ag-address" placeholder="Rạch Giá, Kiên Giang"></div>
+
+    <button class="btn btn-green btn-block" style="margin-top:10px;" onclick="submitAddGuest()">➕ Thêm khách này vào phòng</button>
+  </div>
+</div>
+
+<!-- PHƯƠNG THỨC 3: CHI TIẾT TRẢ PHÒNG -->
+<div class="modal-backdrop" id="modal-checkout">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="co-title">Chi tiết Phòng</h3>
+      <button class="close-btn" onclick="closeModal('modal-checkout')">✕</button>
+    </div>
+    <input type="hidden" id="co-room-id">
+    
+    <div id="co-guest-summary" style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;line-height:1.6;margin-bottom:12px;"></div>
+
+    <div style="margin-bottom:12px;display:flex;gap:8px;">
+      <button class="btn btn-sm btn-primary" onclick="openAddGuestModalFromCheckout()">➕ Thêm khách ở cùng phòng</button>
+    </div>
+
+    <div style="background:#fffbeb;padding:10px;border-radius:8px;border:1px solid #fde68a;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px;">➕ Thêm dịch vụ (Nước,Máu...)</div>
+      <div class="grid-3">
+        <input type="text" id="srv-name" placeholder=" Tên món">
+        <input type="number" id="srv-amount" placeholder="Tiền" step="5000">
+        <button class="btn btn-amber btn-sm" onclick="addRoomService()">+ Thêm</button>
+      </div>
+      <div id="co-services-list" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+
+    <div class="card" style="background:#f0fdf4;border-color:#86efac;">
+      <div class="grid-2">
+        <div class="form-group"><label>Phí phòng</label><input type="number" id="co-room-fee" oninput="recalcCheckout()"></div>
+        <div class="form-group"><label>Dịch vụ</label><input type="number" id="co-service-total" readonly style="background:#e2e8f0;"></div>
+        <div class="form-group"><label> cho cọc</label><input type="number" id="co-paid-before" readonly style="background:#e2e8f0;"></div>
+        <div class="form-group"><label style="color:var(--red);">CÒN PHẢI THU</label><input type="number" id="co-remaining" style="font-weight:800;color:var(--red);font-size:15px;" oninput="recalcDebt()"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label> Thực trả</label><input type="number" id="co-actual-pay" oninput="recalcDebt()"></div>
+        <div class="form-group"><label>Thanh toán</label><select id="co-pay-method"><option value="cash">💵 Tiền mặt</option><option value="bank_ok">🏦 Chuyển tiền</option></select></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-green btn-block" onclick="submitCheckOut()">✅ TRẢ PHÒNG</button>
+      <button class="btn btn-outline btn-sm" onclick="togglePoliceDeclared()">🛂 Khai báo CA tất cả</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GHI NỢ THỦ CÔNG -->
+<div class="modal-backdrop" id="modal-add-debt">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">📒 Ghi nợ thủ công mới</h3>
+      <button class="close-btn" onclick="closeModal('modal-add-debt')">✕</button>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Tên khách hàng *</label><input type="text" id="manual-debt-name" placeholder="Tên khách hàng"></div>
+      <div class="form-group"><label>Số điện thoại</label><input type="tel" id="manual-debt-phone" placeholder="SĐT"></div>
+      <div class="form-group"><label></label><input type="text" id="manual-debt-room" placeholder=" 1"></div>
+      <div class="form-group"><label>Số tiền (VNĐ) *</label><input type="number" id="manual-debt-amount" step="10000" placeholder="150000"></div>
+    </div>
+    <div class="form-group"><label>Nội dung *</label><input type="text" id="manual-debt-note" placeholder="VD: Nợ tiền phòng"></div>
+    <button class="btn btn-red btn-block" onclick="submitManualDebt()">💾 Lưu vào Sổ Nợ</button>
+  </div>
+</div>
+
+<!-- CÁC MODAL KHÁC -->
+<div class="modal-backdrop" id="modal-inventory">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">📦 Nhập hàng mới</h3><button class="close-btn" onclick="closeModal('modal-inventory')">✕</button></div>
+    <div class="grid-2">
+      <div class="form-group"><label>Tên hàng</label><input type="text" id="inv-name" placeholder="Nước cửu"></div>
+      <div class="form-group"><label> số lượng</label><input type="number" id="inv-qty" value="24"></div>
+      <div class="form-group"><label>Tổng vốn</label><input type="number" id="inv-cost" step="1000"></div>
+      <div class="form-group"><label>Giá bán</label><input type="number" id="inv-price" step="1000"></div>
+    </div>
+    <button class="btn btn-green btn-block" onclick="submitInventoryImport()">💾 Lưu kho</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-expense">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">➖ chi</h3><button class="close-btn" onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="grid-2">
+      <div class="form-group"><label> tiền</label><input type="number" id="exp-amount" step="1000"></div>
+      <div class="form-group"><label>Người chi</label><input type="text" id="exp-person" placeholder="Chủ nhà"></div>
+    </div>
+    <div class="form-group"><label>Nội dung</label><input type="text" id="exp-note" placeholder="Tiền điện..."></div>
+    <button class="btn btn-red btn-block" onclick="submitExpense()">💾 Lưu chi</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-income">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">➕ Thu nhập khác</h3><button class="close-btn" onclick="closeModal('modal-income')">✕</button></div>
+    <div class="grid-2">
+      <div class="form-group"><label> tiền</label><input type="number" id="inc-amount" step="1000"></div>
+      <div class="form-group"><label>Nội dung</label><input type="text" id="inc-note" placeholder="Thu khác"></div>
+    </div>
+    <button class="btn btn-green btn-block" onclick="submitIncome()">💾 Lưu thu nhập</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-booking">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">📅 Đặt phòng</h3><button class="close-btn" onclick="closeModal('modal-booking')">✕</button></div>
+    <div class="grid-2">
+      <div class="form-group"><label> Tên khách</label><input type="text" id="bk-name"></div>
+      <div class="form-group"><label>Điện thoại</label><input type="tel" id="bk-phone"></div>
+      <div class="form-group"><label></label><select id="bk-room"></select></div>
+      <div class="form-group"><label>Cọc</label><input type="number" id="bk-deposit" value="0"></div>
+      <div class="form-group"><label>vù</label><input type="datetime-local" id="bk-from"></div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="submitBooking()">💾 Lưu đặt phòng</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-backup">
+  <div class="modal">
+    <div class="modal-header"><h3 class="modal-title">💾 Sao lưu</h3><button class="close-btn" onclick="closeModal('modal-backup')">✕</button></div>
+    <button class="btn btn-primary btn-block" style="margin-bottom:12px;" onclick="downloadBackup()">⬇️ Tải file sao lưu (.JSON)</button>
+    <div class="form-group"><label>Khôi phục</label><input type="file" accept=".json" onchange="restoreBackup(this)"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'HYHY_MOTEL_APP_V10';
+
+const defaultState = {
+  cấu hình: {
+    Tên khách sạn: 'NHÀ NGHỈ HY HY',
+    nhân viên: 'Hôn nhà',
+    giờ 1: 60000,
+    giờ tiếp theo: 20000,
+    qua đêm: 150000,
+    hàng ngày: 250000
+  },
+  phòng: [
+    { id: 1, tên: 'Phòng 1', type: 'Đơn lạnh', trạng thái: 'sạch', lưu trú: null },
+    { id: 2, name: 'Phòng 2', type: 'Đơn lạnh', trạng thái: 'sạch', ở: null },
+    { id: 3, tên: 'Phòng 3', type: 'Đơn lạnh', trạng thái: 'sạch', lưu trú: null },
+    { id: 4, name: 'Phòng 4', type: ' Lạnh lạnh', trạng thái: 'sạch', ở lại: null },
+    { id: 5, name: 'Phòng 5', type: ' Lạnh lạnh', trạng thái: 'sạch', ở lại: null },
+    { id: 6, name: 'Phòng 6', type: 'Bình lạnh', status: 'sạch', ở lại: null }
+  ],
+  kho hàng: [
+    { id: 1, name: 'Nước suối Aquafina', số lượng: 48, giá: 5000, giá: 10000 },
+    { id: 2, name: 'Mì tôm Hảo Hảo', số lượng: 30, giá: 6000, giá: 12000 }
+  ],
+  khách hàng: [],
+  giao dịch: [],
+  đặt chỗ: [],
+  nợ: []
+};
+
+let state = loadState();
+let financeFilter = 'today';
+let memoryFallback = null;
+
+hàm loadState() {
+  thử {
+    const raw = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem('HYHY_MOTEL_APP_V7');
+    nếu (thô) {
+      const parsed = JSON.parse(raw);
+      // Chuyển đổi định dạng lưu trú cũ (tên đơn/cccd) sang mảng khách nếu cần
+      parsed.rooms.forEach(r => {
+        if (r.status === 'occupied' && r.stay && !r.stay.guests) {
+          r.stay.guests = [{
+            Tên: r.stay.name || 'KHÁCH',
+            cccd: r.stay.cccd || '',
+            dob: r.stay.dob || '',
+            giới tính: r.stay.gender || 'Nam',
+            điện thoại: r.stay.phone || '',
+            tấm: r.stay.plate || '',
+            Địa chỉ: r.stay.address || '',
+            đã khai báo: r.stay.declared || false
+          }];
+        }
+      });
+      Trả về kết quả đã phân tích;
+    }
+  } bắt (e) {
+    nếu (memoryFallback) trả về memoryFallback;
+  }
+  trả về JSON.parse(JSON.stringify(defaultState));
+}
+
+hàm saveState() {
+  memoryFallback = state;
+  thử { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } bắt (e) {}
+  renderAll();
+}
+
+function fmtMoney(n) { return (Number(n) || 0).toLocaleString('vi-VN') + ' đ'; }
+
+hàm fmtDateTime(iso) {
+  nếu (!iso) trả về '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' +
+         d.toLocaleDateString('vi-VN', { day: '2 chữ số', month: '2 chữ số' });
+}
+
+hàm toLocalInputValue(dateObj) {
+  const pad = n => String(n).padStart(2, '0');
+  trả về `${dateObj.getFullYear()}-${pad(dateObj.getMonth()+1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+}
+
+/* === ...
+   QUÉT MÃ QR TỪ THƯ VIỆN ẢNH HOẶC CAMERA (CCCD GẮN CHIP VIỆT NAM)
+   ========================================================================= */
+hàm parseCCCDQRString(rawText, mode = 'checkin') {
+  nếu (!rawText) trả về false;
+  const parts = rawText.trim().split('|');
+  nếu (parts.length >= 6) {
+    const cccd = parts[0].trim();
+    const fullName = parts[2].trim().toUpperCase();
+    const dobRaw = parts[3].trim(); // DDMMYYYY
+    const gender = parts[4].trim();
+    const address = parts[5].trim();
+
+    const prefix = mode === 'addguest' ? 'ag-' : 'ci-';
+
+    if (cccd) document.getElementById(prefix + 'cccd').value = cccd;
+    if (fullName) document.getElementById(prefix + 'name').value = fullName;
+    nếu (dobRaw && dobRaw.length === 8) {
+      const dd = dobRaw.slice(0, 2);
+      const mm = dobRaw.slice(2, 4);
+      const yyyy = dobRaw.slice(4, 8);
+      document.getElementById(prefix + 'dob').value = `${yyyy}-${mm}-${dd}`;
+    }
+    nếu (giới tính) {
+      document.getElementById(prefix + 'gender').value = gender.toLowerCase().includes('nữ') ? ' nữ' : 'Nam';
+    }
+    if (address) document.getElementById(prefix + 'address').value = address;
+
+    nếu (chế độ === 'checkin') {
+      const oldCust = state.customers.find(c => c.cccd === cccd);
+      nếu (oldCust && oldCust.phone) {
+        document.getElementById('ci-phone').value = oldCust.phone;
+      }
+    }
+    return fullName || cccd;
+  }
+  Trả về false;
+}
+
+async function scanCCCDQRFile(input, mode = 'checkin') {
+  const file = input.files && input.files[0];
+  nếu (!file) trả về;
+
+  const prefix = mode === 'addguest' ? 'ag-' : '';
+  const statusEl = document.getElementById(prefix + 'scan-status');
+  const previewImg = document.getElementById(prefix + 'scan-preview-img');
+  statusEl.innerHTML = '⏳ Đang đọc ảnh và giải mã QR CCCD...';
+
+  const imgUrl = URL.createObjectURL(file);
+  previewImg.src = imgUrl;
+  previewImg.style.display = 'block';
+
+  const img = new Image();
+  img.onload = async () => {
+    thử {
+      let decodedText = null;
+
+      nếu ('BarcodeDetector' trong cửa sổ) {
+        thử {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const barcodes = await detector.detect(img);
+          nếu (mã vạch && độ dài mã vạch > 0) {
+            decodedText = barcodes[0].rawValue;
+          }
+        } bắt lỗi (err) {}
+      }
+
+      nếu (!decodedText && typeof jsQR === 'function') {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const scales = [1, 1200 / Math.max(img.width, img.height), 800 / Math.max(img.width, img.height)];
+        đối với (const sc của thang đo) {
+          nếu (decodedText) break;
+          const w = Math.round(img.width * (sc > 1 ? 1 : sc));
+          const h = Math.round(img.height * (sc > 1 ? 1 : sc));
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const code = jsQR(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+          if (code && code.data) { decodedText = code.data; break; }
+
+          const cropX = Math.floor(w * 0.55);
+          const cropW = w - cropX;
+          const cropH = Math.floor(h * 0.55);
+          nếu (cropW > 50 && cropH > 50) {
+            const cropData = ctx.getImageData(cropX, 0, cropW, cropH);
+            const cropCode = jsQR(cropData.data, cropW, cropH, { inversionAttempts: 'attemptBoth' });
+            if (cropCode && cropCode.data) { decodedText = cropCode.data; break; }
+          }
+        }
+      }
+
+      nếu (decodedText) {
+        const parsedName = parseCCCDQRString(decodedText, mode);
+        nếu (parsedName) {
+          statusEl.innerHTML = `<span style="color:var(--green);"> ✅ Quét thành công: ${parsedName</span>`;
+        } nếu không thì {
+          statusEl.innerHTML = `<span style="color:var(--amber);">⚠️ Đọc được QR nhưng CCCD chuẩn không đúng.</span>`;
+        }
+      } nếu không thì {
+        statusEl.innerHTML = `<span style="color:var(--red);">❌ Không thể xác định rõ mã QR. Vui lòng chọn góc phải CCCD của hình ảnh.</span>`;
+      }
+    } bắt (e) {
+      statusEl.innerHTML = `<span style="color:var(--red);">❌ Xử lý ảnh lỗi.</span>`;
+    } cuối cùng {
+      URL.revokeObjectURL(imgUrl);
+      input.value = '';
+    }
+  };
+  img.onerror = () => {
+    statusEl.innerHTML = `<span style="color:var(--red);">❌ Không thể mở tệp ảnh.</span>`;
+    URL.revokeObjectURL(imgUrl);
+  };
+  img.src = imgUrl;
+}
+
+hàm calcRoomFee(stay) {
+  const now = new Date();
+  const inTime = new Date(stay.checkInTime);
+  const diffMs = Math.max(0, now - inTime);
+  const diffHours = Math.ceil(diffMs / (1000 * 60 * 60)) || 1;
+  const cfg = state.config;
+  Đặt cơ sở = 0;
+  nếu (stay.rentType === 'hour') {
+    base = Number(cfg.hour1) + Math.max(0, diffHours - 1) * Number(cfg.hourNext);
+  } else if (stay.rentType === 'overnight') {
+    base = Number(cfg.overnight);
+  } else if (stay.rentType === 'daily') {
+    const days = Math.max(1, Math.ceil(diffHours / 24));
+    cơ sở = ngày * Số(cfg.daily);
+  }
+  trả về cơ sở;
+}
+
+hàm renderRooms() {
+  const grid = document.getElementById('room-grid');
+  grid.innerHTML = '';
+  const now = new Date();
+  let cnt = { clean: 0, occ: 0, over: 0, dirty: 0, repair: 0 };
+
+  state.rooms.forEach(r => {
+    let effectiveStatus = r.status;
+    let fee = 0, srvTotal = 0, remain = 0;
+
+    nếu (trạng thái r.= 'đã có người ở' && r.ở lại) {
+      const exp = new Date(r.stay.expectedOut);
+      if (now > exp) { effectiveStatus = 'overtime'; cnt.over++; }
+      Ngược lại, { cnt.occ++; }
+      fee = calcRoomFee(r.stay);
+      srvTotal = (r.stay.services || []).reduce((s, x) => s + Number(x.amount), 0);
+      còn lại = phí + srvTotal - Số(r.stay.deposit || 0);
+    } else if (r.status === 'clean') cnt.clean++;
+    else if (r.status === 'dirty') cnt.dirty++;
+    Ngược lại, nếu (r.status === 'repair') thì cnt.repair++;
+
+    const statusBadge = {
+      sạch sẽ: '<span class="badge st-clean">🟢 Trống sạch</span>',
+      dirty: '<span class="badge st-dirty">🟡 Chưa lên</span>',
+      bị chiếm đóng: '<span class="badge st-occupied">🔵 Có khách</span>',
+      làm thêm giờ: '<span class="badge st-overtime">🔴 Quá giờ</span>',
+      sửa chữa: '<span class="badge st-repair">⚪ Sửa chữa</span>'
+    }[effectiveStatus];
+
+    let bodyHtml = '';
+    nếu (r.stay) {
+      const mainGuest = r.stay.guests && r.stay.guests[0] ? r.stay.guests[0].name : ' казала';
+      const guestCount = r.stay.guests ? r.stay.guests.length : 1;
+      bodyHtml = `
+        <div class="room-info">
+          <div>👤 <strong>${mainGuest}</strong> ${guestCount > 1 ? `<span class="badge st-occupied" style="font-size:10px;padding:1px 4px;">+${guestCount-1} người</span>` : ''}</div>
+          <div>🕒 Vào: ${fmtDateTime(r.stay.checkInTime)}</div>
+          ${r.stay.note ? `<div style="color:var(--amber);font-weight:700;margin-top:2px;">📝 Ghi chú: ${r.stay.note}</div>` : ''}
+        </div>
+        <div class="room-money">
+          <span>Tạm tính: ${fmtMoney(fee + srvTotal)</span>
+          <span style="color:${remain > 0 ? 'var(--red)' : 'var(--green)'};">: ${fmtMoney(remain)}</span>
+        </div>
+      `;
+    } else if (r.status === 'dirty') {
+      bodyHtml = `<div class="room-info" style="color:var(--amber);">Đang chờ dọn dẹp.</div>
+      <button class="btn btn-green btn-sm btn-block" style="margin-top:8px;" onclick="event.stopPropagation(); markClean(${r.id})">✨ Đã xong</button>`;
+    } nếu không thì {
+      bodyHtml = `<div class="room-info" style="color:var(--muted);">Sẵn sàng đón khách.</div>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = `room-card ${effectiveStatus}`;
+    card.onclick = () => onRoomClick(r.id);
+    card.innerHTML = `
+      <div class="room-header">
+        <div><div class="room-name">${r.name}</div><div class="room-type">${r.type}</div></div>
+        ${statusBadge}
+      </div>
+      ${bodyHtml}
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('cnt-clean').textContent = cnt.clean;
+  document.getElementById('cnt-occ').textContent = cnt.occ;
+  document.getElementById('cnt-over').textContent = cnt.over;
+  document.getElementById('cnt-dirty').textContent = cnt.dirty;
+  document.getElementById('cnt-repair').textContent = cnt.repair;
+}
+
+hàm onRoomClick(roomId) {
+  const r = state.rooms.find(x => x.id === roomId);
+  nếu (!r) trả về;
+  if (r.status === 'occupied' && r.stay) { openCheckOutModal(r); }
+  else if (r.status === 'dirty') { if (confirm(`Xác nhận ${r.name} đã xong?`)) markClean(roomId); }
+  ngược lại { openCheckInModal(r); }
+}
+
+hàm markClean(roomId) {
+  const r = state.rooms.find(x => x.id === roomId);
+  if (r) { r.status = 'clean'; saveState(); }
+}
+
+hàm openCheckInModal(room) {
+  document.getElementById('ci-room-id').value = room.id;
+  document.getElementById('ci-title').textContent = `Khách - ${room.name}`;
+  ['ci-lookup','ci-name','ci-cccd','ci-dob','ci-phone','ci-plate','ci-address','ci-note','scan-status'].forEach(id => {
+    const el = document.getElementById(id);
+    nếu (el) el.value = '';
+    if (id === 'scan-status') el.textContent = '';
+  });
+  const previewImg = document.getElementById('scan-preview-img');
+  if (previewImg) { previewImg.style.display = 'none'; previewImg.src = ''; }
+  document.getElementById('ci-gender').value = 'Nam';
+  document.getElementById('ci-deposit').value = 0;
+  document.getElementById('ci-rent-type').value = 'hour';
+
+  const now = new Date();
+  document.getElementById('ci-checkin-time').value = toLocalInputValue(now);
+  updateExpectedCheckout();
+  openModal('modal-checkin');
+}
+
+hàm updateExpectedCheckout() {
+  const inVal = document.getElementById('ci-checkin-time').value;
+  nếu (!inVal) trả về;
+  const d = new Date(inVal);
+  const type = document.getElementById('ci-rent-type').value;
+  if (type === 'hour') d.setHours(d.getHours() + 2);
+  else if (type === 'overnight') { d.setDate(d.getDate() + 1); d.setHours(12, 0, 0, 0); }
+  else if (type === 'daily') d.setDate(d.getDate() + 1);
+  document.getElementById('ci-checkout-expected').value = toLocalInputValue(d);
+}
+
+hàm autoFillCustomer(q) {
+  q = q.trim().toLowerCase();
+  const msg = document.getElementById('ci-lookup-msg');
+  if (q.length < 3) { msg.textContent = ''; return; }
+  const found = state.customers.find(c => (c.phone && c.phone.includes(q)) || (c.cccd && c.cccd.toLowerCase().includes(q)));
+  nếu (tìm thấy) {
+    document.getElementById('ci-name').value = found.name || '';
+    document.getElementById('ci-cccd').value = found.cccd || '';
+    document.getElementById('ci-phone').value = found.phone || '';
+    document.getElementById('ci-address').value = found.address || '';
+    msg.innerHTML = `<span style="color:var(--green);"> ✅ Khách quen (${found.visits} lần)</span>`;
+  } nếu không thì {
+    msg.textContent = 'Khách hàng mới.';
+  }
+}
+
+hàm parseAmountFromNote(text) {
+  nếu (!text) trả về 0;
+  const kMatch = text.match(/(\d+(?:[.,]\d+)?)\s*k\b/i);
+  nếu (kMatch) {
+    return Math.round(parseFloat(kMatch[1].replace(',', '.')) * 1000);
+  }
+  const numMatch = text.match(/(\d{1,3}(?:[.,]\d{3})+|\d{4,})/);
+  nếu (numMatch) {
+    return Number(numMatch[1].replace(/[.,]/g, '')) || 0;
+  }
+  Trả về 0;
+}
+
+hàm submitCheckIn() {
+  const roomId = Number(document.getElementById('ci-room-id').value);
+  const name = document.getElementById('ci-name').value.trim().toUpperCase();
+  if (!name) { notification('Xin vui lòng nhập tên khách hàng!'); trở lại; }
+
+  const primaryGuest = {
+    tên,
+    cccd: document.getElementById('ci-cccd').value.trim(),
+    dob: document.getElementById('ci-dob').value,
+    giới tính: document.getElementById('ci-gender').value,
+    điện thoại: document.getElementById('ci-phone').value.trim(),
+    plate: document.getElementById('ci-plate').value.trim().toUpperCase(),
+    địa chỉ: document.getElementById('ci-address').value.trim(),
+    đã khai báo: false
+  };
+
+  const stay = {
+    id: Date.now(),
+    roomId,
+    khách: [primaryGuest],
+    rentType: document.getElementById('ci-rent-type').value,
+    checkInTime: document.getElementById('ci-checkin-time').value,
+    expectedOut: document.getElementById('ci-checkout-expected').value,
+    tiền gửi: Số(document.getElementById('ci-deposit').value) || 0,
+    Lưu ý: document.getElementById('ci-note').value.trim(),
+    dịch vụ: []
+  };
+
+  const room = state.rooms.find(r => r.id === roomId);
+  room.status = 'occupied';
+  room.stay = stay;
+  upsertCustomer(primaryGuest, 0);
+
+  nếu (stay.deposit > 0) {
+    state.transactions.unshift({
+      id: Date.now(), time: new Date().toISOString(), type: 'in', category: 'Cọc phòng',
+      Lưu ý: `Cọc ${room.name} - ${primaryGuest.name}`, số tiền: stay.deposit, phương thức: 'tiền mặt'
+    });
+  }
+
+  nếu (stay.note) {
+    const parsedAmt = parseAmountFromNote(stay.note);
+    state.debts.unshift({
+      id: Date.now() + 1,
+      stayId: stay.id,
+      ngày: new Date().toISOString(),
+      tên: primaryGuest.name,
+      điện thoại: primaryGuest.phone,
+      room: room.name,
+      số tiền: parsedAmt,
+      đã thanh toán: false,
+      Lưu ý: stay.note
+    });
+  }
+
+  closeModal('modal-checkin');
+  saveState();
+}
+
+/* THÊM KHÁCH SẠN VÀO PHÒNG ĐANG Ở */
+hàm openAddGuestModalFromCheckout() {
+  const roomId = Number(document.getElementById('co-room-id').value);
+  closeModal('modal-checkout');
+  openAddGuestModal(roomId);
+}
+
+hàm openAddGuestModal(roomId) {
+  const r = state.rooms.find(x => x.id === roomId);
+  if (!r || !r.stay) { Alert('Phòng chưa có khách!'); trở lại; }
+
+  document.getElementById('ag-room-id').value = roomId;
+  document.getElementById('ag-title').textContent = `Thêm khách vào ${r.name}`;
+  ['ag-name','ag-cccd','ag-dob','ag-phone','ag-plate','ag-address','ag-scan-status'].forEach(id => {
+    const el = document.getElementById(id);
+    nếu (el) el.value = '';
+    if (id === 'ag-scan-status') el.textContent = '';
+  });
+  const previewImg = document.getElementById('ag-scan-preview-img');
+  if (previewImg) { previewImg.style.display = 'none'; previewImg.src = ''; }
+  document.getElementById('ag-gender').value = 'Nam';
+
+  openModal('modal-add-guest');
+}
+
+hàm submitAddGuest() {
+  const roomId = Number(document.getElementById('ag-room-id').value);
+  const name = document.getElementById('ag-name').value.trim().toUpperCase();
+  if (!name) { notification('Vui lòng nhập tên khách hàng đi cùng!'); trở lại; }
+
+  const r = state.rooms.find(x => x.id === roomId);
+  nếu (!r || !r.stay) thì trả về;
+
+  const newGuest = {
+    tên,
+    cccd: document.getElementById('ag-cccd').value.trim(),
+    dob: document.getElementById('ag-dob').value,
+    giới tính: document.getElementById('ag-gender').value,
+    điện thoại: document.getElementById('ag-phone').value.trim(),
+    plate: document.getElementById('ag-plate').value.trim().toUpperCase(),
+    địa chỉ: document.getElementById('ag-address').value.trim(),
+    đã khai báo: false
+  };
+
+  r.stay.guests.push(newGuest);
+  upsertCustomer(newGuest, 0);
+
+  closeModal('modal-add-guest');
+  saveState();
+  Alert(`Đã thêm thành công ${name} vào ${r.name}!`);
+  openCheckOutModal(r);
+}
+
+hàm setRoomRepair() {
+  const roomId = Number(document.getElementById('ci-room-id').value);
+  const r = state.rooms.find(x => x.id === roomId);
+  if (r) { r.status = 'repair'; closeModal('modal-checkin'); saveState(); }
+}
+
+hàm openCheckOutModal(room) {
+  const s = room.stay;
+  document.getElementById('co-room-id').value = room.id;
+  document.getElementById('co-title').textContent = `${room.name} - ${s.guests[0].name} (${s.guests.length} khách)`;
+
+  let guestsHtml = s.guests.map((g, idx) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dashed #cbd5e1;">
+      <div>👤 <strong>${g.name}</strong> - CCCD: ${g.cccd || '-'} | SĐT: ${g.phone || '-'} | Xe: ${g.plate || '-'}</div>
+      ${s.guests.length > 1 ? `<button class="btn btn-sm btn-red" style="padding:2px 6px;font-size:11px;" onclick="removeGuestFromRoom(${room.id}, ${idx})">Xóa</button>` : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('co-guest-summary').innerHTML = `
+    <div style="font-weight:700;margin-bottom:4px;color:var(--primary);">👥 Danh sách khách trong phòng (${s.guests.length}):</div>
+    ${guestsHtml}
+    ${s.note ? `<div style="color:var(--amber);font-weight:700;margin-top:6px;">📝 Ghi chú: ${s.note}</div>` : ''}
+  `;
+
+  renderRoomServicesList(s);
+
+  const fee = calcRoomFee(s);
+  const srvTotal = (s.services || []).reduce((sum, x) => sum + Number(x.amount), 0);
+  const remain = Math.max(0, fee + srvTotal - Number(s.deposit || 0));
+
+  document.getElementById('co-room-fee').value = fee;
+  document.getElementById('co-service-total').value = srvTotal;
+  document.getElementById('co-paid-before').value = s.deposit || 0;
+  document.getElementById('co-remaining').value = remain;
+  document.getElementById('co-actual-pay').value = remain;
+  openModal('modal-checkout');
+}
+
+hàm removeGuestFromRoom(roomId, guestIdx) {
+  const r = state.rooms.find(x => x.id === roomId);
+  nếu (!r || !r.stay) thì trả về;
+  if (r.stay.guests.length <= 1) { notification('Phòng phải có ít nhất 1 khách chính!'); trở lại; }
+  if (!confirm('Bạn chắc chắn muốn xóa khách hàng này khỏi danh sách phòng?')) return;
+
+  r.stay.guests.splice(guestIdx, 1);
+  saveState();
+  openCheckOutModal(r);
+}
+
+hàm addRoomService() {
+  const r = state.rooms.find(x => x.id === Number(document.getElementById('co-room-id').value));
+  const name = document.getElementById('srv-name').value.trim();
+  const amount = Number(document.getElementById('srv-amount').value);
+  if (!name || !amount) return;
+  r.stay.services.push({ name, amount });
+  document.getElementById('srv-name').value = '';
+  document.getElementById('srv-amount').value = '';
+  renderRoomServicesList(r.stay);
+  recalcCheckout();
+  saveState();
+}
+
+hàm renderRoomServicesList(stay) {
+  const el = document.getElementById('co-services-list');
+  el.innerHTML = (stay.services || []).map((x, idx) => `<div>• ${x.name}: ${fmtMoney(x.amount)} <span style="color:var(--red);cursor:pointer;" onclick="stay.services.splice(${idx},1);renderRoomServicesList(stay);recalcCheckout();saveState()">[Xóa]</span></div>`).join('') || '<span style="color:var(--muted);">Phòng có DV.</span>';
+}
+
+hàm recalcCheckout() {
+  const fee = Number(document.getElementById('co-room-fee').value) || 0;
+  const srv = (state.rooms.find(x => x.id === Number(document.getElementById('co-room-id').value)).stay.services || []).reduce((s, x) => s + Number(x.amount), 0);
+  const paid = Number(document.getElementById('co-paid-before').value) || 0;
+  const remain = Math.max(0, fee + srv - paid);
+  document.getElementById('co-service-total').value = srv;
+  document.getElementById('co-remaining').value = remain;
+  document.getElementById('co-actual-pay').value = remain;
+}
+
+hàm recalcDebt() {}
+
+hàm submitCheckOut() {
+  const r = state.rooms.find(x => x.id === Number(document.getElementById('co-room-id').value));
+  const s = r.stay;
+  const remain = Number(document.getElementById('co-remaining').value) || 0;
+  const actualPay = Number(document.getElementById('co-actual-pay').value) || 0;
+  const method = document.getElementById('co-pay-method').value;
+  const mainGuestName = s.guests[0].name;
+
+  nếu (actualPay > 0) {
+    state.transactions.unshift({
+      id: Date.now(), time: new Date().toISOString(), type: 'in', category: 'Tiền phòng',
+      lưu ý: ` ${r.name} - ${mainGuestName}`, số tiền: actualPay, phương thức
+    });
+  }
+
+  nếu (actualPay < remain) {
+    const unpaid = remain - actualPay;
+    const existingDebt = state.debts.find(d => d.stayId === s.id && !d.paid);
+    nếu (existingDebt) {
+      existingDebt.amount = (Number(existingDebt.amount) || 0) + unpaid;
+      hiện cóDebt.note = hiện cóDebt.note ? `${hiện cóDebt.note} | Thiếu tiền phòng: ${fmtMoney(unpay)}` : `Thiếu tiền phòng: ${fmtMoney(unpay)}`;
+    } nếu không thì {
+      const nợNote = s.note ? `[Nhận phòng: ${s.note}] Thiếu tiền phòng` : 'Thiếu tiền phòng';
+      state.debts.unshift({
+        id: Date.now(), stayId: s.id, date: new Date().toISOString(), name: mainGuestName, phone: s.guests[0].phone,
+        phòng: r.name, số tiền: chưa thanh toán, đã thanh toán: false, ghi chú: debtNote
+      });
+    }
+  }
+
+  s.guests.forEach(g => upsertCustomer(g, Number(s.deposit || 0) + actualPay, true));
+  r.status = 'dirty';
+  r.stay = null;
+  closeModal('modal-checkout');
+  saveState();
+}
+
+hàm togglePoliceDeclared() {
+  const r = state.rooms.find(x => x.id === Number(document.getElementById('co-room-id').value));
+  nếu (r && r.stay) {
+    const allDeclared = r.stay.guests.every(g => g.declared);
+    r.stay.guests.forEach(g => g.declared = !allDeclared);
+    saveState();
+    openCheckOutModal(r);
+  }
+}
+
+/* QUẢN LÝ DANH SÁCH PHÒNG */
+hàm renderRoomManagement() {
+  const el = document.getElementById('room-management-list');
+  el.innerHTML = state.rooms.map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e2e8f0;font-size:13px;">
+      <div><strong>${r.name}</strong> <span style="color:var(--muted);font-size:11px;">(${r.type})</span></div>
+      <button class="btn btn-sm btn-red" onclick="deleteRoom(${r.id})">Xóa phòng</button>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">Chưa có phòng nào.</div>';
+}
+
+hàm addNewRoom() {
+  const nameInput = document.getElementById('new-room-name');
+  const typeSelect = document.getElementById('new-room-type');
+  const name = nameInput.value.trim();
+  if (!name) { notification('Xin vui lòng nhập tên phòng!'); trở lại; }
+
+  const newId = state.rooms.length > 0 ? Math.max(...state.rooms.map(r => r.id)) + 1 : 1;
+  state.rooms.push({ id: newId, name, type: typeSelect.value, status: 'clean', stay: null });
+
+  nameInput.value = '';
+  saveState();
+  Alert(`Đã thêm thành công ${name}!`);
+}
+
+hàm deleteRoom(id) {
+  const r = state.rooms.find(x => x.id === id);
+  nếu (!r) trả về;
+  if (r.status === 'occupied') { notification('Không thể xóa phòng đang có khách ở!'); trở lại; }
+  if (!confirm(`Bạn chắc chắn muốn xóa ${r.name}?`)) return;
+
+  state.rooms = state.rooms.filter(x => x.id !== id);
+  saveState();
+}
+
+/* SỔ NỢ */
+hàm renderDebtPage() {
+  const activeDebts = state.debts.filter(d => !d.paid);
+  const totalDebt = activeDebts.reduce((s, d) => s + Number(d.amount), 0);
+  document.getElementById('total-debt-val').textContent = fmtMoney(totalDebt);
+  document.getElementById('total-debt-cnt').textContent = `${activeDebts.length} khách`;
+
+  document.getElementById('debt-page-tbody').innerHTML = state.debts.map(d => `
+    <tr>
+      <td>${fmtDateTime(d.date)}</td>
+      <td><strong>${d.name}</strong><br><span style="font-size:11px;color:var(--muted);">${d.phone || '-'}</span></td>
+      <td>${d.room || '-'}</td>
+      <td style="font-weight:700;color:var(--red);">${fmtMoney(d.amount)}<br><span style="font-size:11px;color:#334155;font-weight:600;">📝 ${d.note || ''}</span></td>
+      <td>${d.trả tiền ? '<span class="badge st-clean">Đã thanh toán</span>' : '<span class="badge st-overtime">Đang nợ</span>'</td>
+      <td style="white-space:nowrap;">
+        ${d.paid ? '' : `<button class="btn btn-sm btn-green" onclick="settleDebt(${d.id})">Thu nợ</button> `}
+        <button class="btn btn-sm btn-outline" onclick="editDebt(${d.id})">Sửa</button>
+        <button class="btn btn-sm btn-red" onclick="deleteDebt(${d.id})">Xóa</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);">Sổ nợ trống.</td></tr>';
+}
+
+hàm settleDebt(id) {
+  const d = state.debts.find(x => x.id === id);
+  nếu (!d) trả về;
+  if (!confirm(`Xác nhận đủ ${fmtMoney(d.amount)} từ khách hàng ${d.name}?`)) return;
+  d.paid = true;
+  nếu (Số(d.amount) > 0) {
+    state.transactions.unshift({
+      id: Date.now(), time: new Date().toISOString(), type: 'in', category: 'Thu nợ khách',
+      Lưu ý: `Thu nợ ${d.name} (${d.room})`, số tiền: d.amount, phương thức thanh toán: 'tiền mặt'
+    });
+  }
+  saveState();
+}
+
+hàm editDebt(id) {
+  const d = state.debts.find(x => x.id === id);
+  nếu (!d) trả về;
+  const newAmt = nhắc(`Nhập số tiền nợ mới cho ${d.name} (VND):`, d.amount);
+  if (newAmt === null) return;
+  const newNote = nhắc nhở(`Sửa nội dung ghi chú nợ:`, d.note || '');
+  if (newNote === null) return;
+  d.amount = Number(newAmt) || 0;
+  d.note = newNote.trim();
+  saveState();
+}
+
+hàm deleteDebt(id) {
+  if (!confirm('Xóa mục này khỏi Sổ Nợ?')) return;
+  state.debts = state.debts.filter(x => x.id !== id);
+  saveState();
+}
+
+hàm submitManualDebt() {
+  const name = document.getElementById('manual-debt-name').value.trim().toUpperCase();
+  const amount = Number(document.getElementById('manual-debt-amount').value);
+  const note = document.getElementById('manual-debt-note').value.trim();
+  if (!name || !amount || !note) { cảnh báo('Điền đủ thông tin nợ!'); trở lại; }
+
+  state.debts.unshift({
+    id: Date.now(), date: new Date().toISOString(), name,
+    điện thoại: document.getElementById('manual-debt-phone').value.trim(),
+    phòng: document.getElementById('manual-debt-room').value.trim() || ' 1',
+    số tiền đã thanh toán: sai, ghi chú
+  });
+  closeModal('modal-add-debt');
+  saveState();
+}
+
+/* KHO & KHÁCH */
+hàm submitInventoryImport() {
+  const name = document.getElementById('inv-name').value.trim();
+  const qty = Number(document.getElementById('inv-qty').value);
+  const cost = Number(document.getElementById('inv-cost').value);
+  if (!name || !qty || !cost) return;
+  state.inventory.push({ id: Date.now(), name, qty, cost, price: Number(document.getElementById('inv-price').value) || cost * 1.5 });
+  state.transactions.unshift({ id: Date.now(), time: new Date().toISOString(), type: 'out', category: 'Nội hàng', note: `Nội kho: ${qty} ${name}`, amount: cost, method: 'cash' });
+  closeModal('modal-inventory');
+  saveState();
+}
+
+hàm renderInventory() {
+  document.getElementById('inventory-tbody').innerHTML = state.inventory.map(i => `
+    <tr><td><strong>${i.name}</strong></td><td>${i.qty}</td><td>${fmtMoney(i.cost)}</td><td>${fmtMoney(i.price)}</td></tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;">Kho trống.</td></tr>';
+}
+
+function upsertCustomer(guest, spentAdd = 0, isCheckout = false) {
+  let c = state.customers.find(x => (guest.cccd && x.cccd === guest.cccd) || (guest.phone && x.phone === guest.phone));
+  nếu (!c) {
+    c = { id: Date.now(), name: guest.name, cccd: guest.cccd, phone: guest.phone, address: guest.address, visits: 0, totalSpent: 0, tag: 'Thường' };
+    state.customers.unshift(c);
+  }
+  if (!isCheckout) c.visits += 1;
+  c.totalSpent += spentAdd;
+}
+
+hàm renderCustomers() {
+  const q = (document.getElementById('cust-search').value || '').toLowerCase();
+  document.getElementById('customer-tbody').innerHTML = state.customers.filter(c => c.name.toLowerCase().includes(q)).map(c => `
+    <tr><td><strong>${c.name}</strong></td><td>${c.cccd || '-'}<br>${c.phone || '-'}</td><td>${c.visits} lượt<br>${fmtMoney(c.totalSpent)}</td><td><span class="badge st-occupied">${c.tag}</span></td></tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;">Chưa có khách hàng.</td></tr>';
+
+  document.getElementById('booking-tbody').innerHTML = state.bookings.map(b => `
+    <tr><td><strong>${b.name}</strong><br>${b.phone}</td><td>${b.roomName}</td><td>${fmtDateTime(b.from)}</td><td>${fmtMoney(b.deposit)}</td><td><button class="btn btn-sm btn-green" onclick="convertBooking(${b.id})"></button></td></tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;">Không có phòng.</td></tr>';
+}
+
+hàm convertBooking(id) {
+  const b = state.bookings.find(x => x.id === id);
+  const r = state.rooms.find(x => x.id === b.roomId);
+  openCheckInModal(r);
+  document.getElementById('ci-name').value = b.name;
+  document.getElementById('ci-phone').value = b.phone;
+  document.getElementById('ci-deposit').value = b.deposit;
+  state.bookings = state.bookings.filter(x => x.id !== id);
+  saveState();
+}
+
+hàm setFinanceFilter(f) {
+  financeFilter = f;
+  ['hôm nay','tuần','tháng','tất cả'].forEach(k => {
+    document.getElementById('flt-' + k).className = 'btn btn-sm ' + (k === f ? 'btn-primary' : 'btn-outline');
+  });
+  renderFinance();
+}
+
+hàm renderFinance() {
+  const now = new Date();
+  const filtered = state.transactions.filter(t => {
+    const d = new Date(t.time);
+    if (financeFilter === 'today') return d.toDateString() === now.toDateString();
+    if (financeFilter === 'week') return (now - d) <= 7 * 86400000;
+    if (financeFilter === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    Trả về true;
+  });
+
+  đặt TotalIn = 0, TotalOut = 0;
+  filtered.forEach(t => { if (t.type === 'in') totalIn += Number(t.amount); else totalOut += Number(t.amount); });
+
+  document.getElementById('kpi-in').textContent = fmtMoney(totalIn);
+  document.getElementById('kpi-out').textContent = fmtMoney(totalOut);
+  document.getElementById('kpi-net').textContent = fmtMoney(totalIn - TotalOut);
+  document.getElementById('kpi-debt').textContent = fmtMoney(state.debts.filter(d => !d.paid).reduce((s, d) => s + Number(d.amount), 0));
+
+  document.getElementById('finance-tbody').innerHTML = filtered.map(t => `
+    <tr><td>${fmtDateTime(t.time)}</td><td><strong>[${t.category}]</strong> ${t.note}</td><td>${t.method === 'cash' ? 'Tiền mặt' : 'CK'}</td><td style="font-weight:700;color:${t.type === 'in' ? 'var(--green)' : 'var(--red)'};">${t.type === 'in' ? '+' : '-'}${fmtMoney(t.amount)}</td></tr>
+  `).join('') || '<tr><td colspan="4" style="text-align:center;">Không có giao dịch.</td></tr>';
+}
+
+hàm submitExpense() {
+  const amount = Number(document.getElementById('exp-amount').value);
+  const note = document.getElementById('exp-note').value.trim();
+  if (!amount || !note) return;
+  state.transactions.unshift({ id: Date.now(), time: new Date().toISOString(), type: 'out', category: 'Chi phí', note, amount, method: 'cash' });
+  closeModal('modal-expense');
+  saveState();
+}
+
+hàm submitIncome() {
+  const amount = Number(document.getElementById('inc-amount').value);
+  const note = document.getElementById('inc-note').value.trim();
+  nếu (!amount) trả về;
+  state.transactions.unshift({ id: Date.now(), time: new Date().toISOString(), type: 'in', category: 'Thu khác', note, amount, method: 'cash' });
+  closeModal('modal-income');
+  saveState();
+}
+
+hàm renderPolice() {
+  let allGuestsList = [];
+  state.rooms.forEach(r => {
+    if (r.status === 'occupied' && r.stay && r.stay.guests) {
+      r.stay.guests.forEach(g => {
+        allGuestsList.push({ roomName: r.name, roomId: r.id, checkInTime: r.stay.checkInTime, ...g });
+      });
+    }
+  });
+
+  const undeclaredCount = allGuestsList.filter(g => !g.declared).length;
+  document.getElementById('undeclared-count').textContent = `${undeclaredCount} chưa khai báo`;
+
+  document.getElementById('police-tbody').innerHTML = allGuestsList.map(g => `
+    <tr>
+      <td><strong>${g.roomName}</strong></td>
+      <td><strong>${g.name}</strong><br>CCCD: ${g.cccd || '-'}</td>
+      <td>${g.dob || '-'} | ${g.gender}</td>
+      <td>${fmtDateTime(g.checkInTime)}</td>
+      <td>${g.declared ? 'Đã khai báo' : `<button class="btn btn-sm btn-primary" onclick="markGuestDeclared(${g.roomId}, '${g.cccd}')">Khai báo</button>`</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;">Không có khách hàng.</td></tr>';
+}
+
+hàm markGuestDeclared(roomId, cccd) {
+  const r = state.rooms.find(x => x.id === roomId);
+  nếu (r && r.stay && r.stay.guests) {
+    const g = r.stay.guests.find(x => x.cccd === cccd || (!x.cccd && !cccd));
+    if (g) { g.declared = true; saveState(); }
+  }
+}
+
+hàm copyPoliceInfo() {
+  let lines = [];
+  state.rooms.forEach(r => {
+    if (r.status === 'occupied' && r.stay && r.stay.guests) {
+      r.stay.guests.forEach(g => {
+        if (!g.declared)lines.push(`${r.name}: ${g.name} - CCCD: ${g.cccd || 'Không có'}`);
+      });
+    }
+  });
+  if (lines.length === 0) { notification('Tất cả khách hàng đã được khai báo!'); trở lại; }
+  navigator.clipboard.writeText(lines.join('\n')).then(() => notification('Đã sao chép danh sách chưa khai báo!'));
+}
+
+hàm exportPoliceCSV() {
+  let csv = '\uFEFFPhòng,Họ tên,CCCD,Ngày sinh\n';
+  state.rooms.forEach(r => {
+    if (r.status === 'occupied' && r.stay && r.stay.guests) {
+      r.stay.guests.forEach(g => {
+        csv += `"${r.name}","${g.name}","${g.cccd || ''}","${g.dob || ''}"\n`;
+      });
+    }
+  });
+  downloadFile(csv, 'khai-bao-luu-tru.csv', 'text/csv;charset=utf-8;');
+}
+
+hàm renderOps() {
+  document.getElementById('housekeeping-list').innerHTML = state.rooms.filter(r => r.status === 'dirty').map(r => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;">
+      <span><strong>${r.name</strong> (Cờ lên)</span>
+      <button class="btn btn-sm btn-green" onclick="markClean(${r.id})">Đã up xong</button>
+    </div>
+  `).join('') || '<div style="color:var(--green);font-size:13px;"> ✅ Tất cả các phòng đã được dọn dẹp!</div>';
+
+  document.getElementById('cfg-hotel-name').value = state.config.hotelName;
+  document.getElementById('cfg-staff').value = state.config.staff;
+  document.getElementById('cfg-hour1').value = state.config.hour1;
+  document.getElementById('cfg-hour-next').value = state.config.hourNext;
+  document.getElementById('cfg-overnight').value = state.config.overnight;
+  document.getElementById('cfg-daily').value = state.config.daily;
+
+  renderRoomManagement();
+}
+
+hàm saveSettings() {
+  state.config.hotelName = document.getElementById('cfg-hotel-name').value.trim() || 'NHÀ NGHỈ HY HY';
+  state.config.staff = document.getElementById('cfg-staff').value.trim() || 'Hòa nhà';
+  state.config.hour1 = Number(document.getElementById('cfg-hour1').value) || 60000;
+  state.config.hourNext = Number(document.getElementById('cfg-hour-next').value) || 20000;
+  state.config.overnight = Number(document.getElementById('cfg-overnight').value) || 150000;
+  state.config.daily = Number(document.getElementById('cfg-daily').value) || 250000;
+  saveState();
+  Alert('Đã cài đặt xong!');
+}
+
+hàm submitBooking() {
+  const name = document.getElementById('bk-name').value.trim().toUpperCase();
+  const phone = document.getElementById('bk-phone').value.trim();
+  const roomId = Number(document.getElementById('bk-room').value);
+  const room = state.rooms.find(r => r.id === roomId);
+  if (!name || !phone) return;
+  state.bookings.unshift({ id: Date.now(), name, phone, roomId, roomName: room.name, deposit: Number(document.getElementById('bk-deposit').value) || 0, from: document.getElementById('bk-from').value });
+  closeModal('modal-booking');
+  saveState();
+}
+
+function downloadBackup() { downloadFile(JSON.stringify(state, null, 2), `sao-luu-${new Date().toISOString().slice(0,10)}.json`, 'application/json'); }
+hàm restoreBackup(đầu vào) {
+  const file = input.files[0];
+  nếu (!file) trả về;
+  const reader = new FileReader();
+  reader.onload = e => { try { state = JSON.parse(e.target.result); saveState(); Alert('Khôi phục thành công!'); } Catch(err){ Alert('Lỗi file!'); } };
+  reader.readAsText(file);
+}
+hàm downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+hàm switchTab(tabName, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+
+hàm openModal(id) {
+  nếu (id === 'modal-booking') {
+    document.getElementById('bk-room').innerHTML = state.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+  }
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+hàm renderAll() {
+  document.getElementById('app-title').textContent = state.config.hotelName;
+  renderRooms();
+  renderDebtPage();
+  renderPolice();
+  renderInventory();
+  renderFinance();
+  renderCustomers();
+  renderOps();
+}
+
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('clock-display').textContent = now.toLocaleTimeString('vi-VN') + ' • ' + now.toLocaleDateString('vi-VN');
+}, 1000);
+
+renderAll();
+</script>
+</body>
+</html>
