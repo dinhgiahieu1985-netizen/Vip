@@ -574,6 +574,31 @@
   </div>
 </div>
 
+<!-- MODAL SỬA SỔ NỢ -->
+<div class="modal-backdrop" id="modal-edit-debt">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✏️ Chỉnh sửa mục nợ</h3>
+      <button class="close-btn" onclick="closeModal('modal-edit-debt')">✕</button>
+    </div>
+    <input type="hidden" id="edit-debt-id">
+    <div class="grid-2">
+      <div class="form-group"><label>Tên khách *</label><input type="text" id="edit-debt-name"></div>
+      <div class="form-group"><label>Số điện thoại</label><input type="tel" id="edit-debt-phone"></div>
+      <div class="form-group"><label>Phòng</label><input type="text" id="edit-debt-room"></div>
+      <div class="form-group"><label>Số tiền nợ (VNĐ) *</label><input type="number" id="edit-debt-amount" step="1000"></div>
+    </div>
+    <div class="form-group"><label>Trạng thái</label>
+      <select id="edit-debt-paid">
+        <option value="false">Đang nợ</option>
+        <option value="true">Đã trả</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Nội dung / Ghi chú</label><input type="text" id="edit-debt-note"></div>
+    <button class="btn btn-primary btn-block" onclick="saveEditDebt()">💾 Cập nhật Sổ Nợ</button>
+  </div>
+</div>
+
 <!-- CÁC MODAL KHÁC -->
 <div class="modal-backdrop" id="modal-inventory">
   <div class="modal">
@@ -1277,8 +1302,8 @@ function renderDebtPage() {
       <td>${d.paid ? '<span class="badge st-clean">Đã trả</span>' : '<span class="badge st-overtime">Đang nợ</span>'}</td>
       <td style="white-space:nowrap;">
         ${d.paid ? '' : `<button class="btn btn-sm btn-green" onclick="settleDebt(${d.id})">Thu nợ</button> `}
-        <button class="btn btn-sm btn-outline" onclick="editDebt(${d.id})">Sửa</button>
-        <button class="btn btn-sm btn-red" onclick="deleteDebt(${d.id})">Xóa</button>
+        <button class="btn btn-sm btn-outline" onclick="editDebt(${d.id})">✏️ Sửa</button>
+        <button class="btn btn-sm btn-red" onclick="deleteDebt(${d.id})">🗑️ Xóa</button>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);">Sổ nợ trống.</td></tr>';
@@ -1301,17 +1326,41 @@ function settleDebt(id) {
 function editDebt(id) {
   const d = state.debts.find(x => x.id === id);
   if (!d) return;
-  const newAmt = prompt(`Nhập số tiền nợ mới cho ${d.name} (VNĐ):`, d.amount);
-  if (newAmt === null) return;
-  const newNote = prompt(`Sửa nội dung ghi chú nợ:`, d.note || '');
-  if (newNote === null) return;
-  d.amount = Number(newAmt) || 0;
-  d.note = newNote.trim();
+  document.getElementById('edit-debt-id').value = d.id;
+  document.getElementById('edit-debt-name').value = d.name || '';
+  document.getElementById('edit-debt-phone').value = d.phone || '';
+  document.getElementById('edit-debt-room').value = d.room || '';
+  document.getElementById('edit-debt-amount').value = Number(d.amount) || 0;
+  document.getElementById('edit-debt-paid').value = d.paid ? 'true' : 'false';
+  document.getElementById('edit-debt-note').value = d.note || '';
+  openModal('modal-edit-debt');
+}
+
+function saveEditDebt() {
+  const id = Number(document.getElementById('edit-debt-id').value);
+  const d = state.debts.find(x => x.id === id);
+  if (!d) return;
+
+  const name = document.getElementById('edit-debt-name').value.trim().toUpperCase();
+  const amount = Number(document.getElementById('edit-debt-amount').value);
+  if (!name) { alert('Vui lòng nhập tên khách!'); return; }
+  if (isNaN(amount) || amount < 0) { alert('Số tiền nợ không hợp lệ!'); return; }
+
+  d.name = name;
+  d.phone = document.getElementById('edit-debt-phone').value.trim();
+  d.room = document.getElementById('edit-debt-room').value.trim() || 'Ngoài';
+  d.amount = amount;
+  d.paid = document.getElementById('edit-debt-paid').value === 'true';
+  d.note = document.getElementById('edit-debt-note').value.trim();
+
+  closeModal('modal-edit-debt');
   saveState();
 }
 
 function deleteDebt(id) {
-  if (!confirm('Xóa mục này khỏi Sổ Nợ?')) return;
+  const d = state.debts.find(x => x.id === id);
+  const label = d ? `${d.name} (${fmtMoney(d.amount)})` : 'mục này';
+  if (!confirm(`Bạn có chắc chắn muốn xóa ${label} khỏi Sổ Nợ?`)) return;
   state.debts = state.debts.filter(x => x.id !== id);
   saveState();
 }
@@ -1327,6 +1376,9 @@ function submitManualDebt() {
     phone: document.getElementById('manual-debt-phone').value.trim(),
     room: document.getElementById('manual-debt-room').value.trim() || 'Ngoài',
     amount, paid: false, note
+  });
+  ['manual-debt-name','manual-debt-phone','manual-debt-room','manual-debt-amount','manual-debt-note'].forEach(id => {
+    document.getElementById(id).value = '';
   });
   closeModal('modal-add-debt');
   saveState();
